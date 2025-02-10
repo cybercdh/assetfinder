@@ -56,9 +56,7 @@ func getFacebookCerts(accessToken, query string) ([]string, error) {
 		}
 
 		for _, data := range wrapper.Data {
-			for _, d := range data.Domains {
-				out = append(out, d)
-			}
+			out = append(out, data.Domains...)
 		}
 
 		fetchURL = wrapper.Paging.Next

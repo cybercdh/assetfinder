@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -63,6 +62,7 @@ func main() {
 		{"Arquivo", fetchArquivo},
 		{"DnsHistory", fetchDnsHistory},
 		{"Jldc", fetchJldc},
+		{"MerkleMap", fetchMerkleMap},
 	}
 
 	// optional add in wayback
@@ -87,6 +87,7 @@ func main() {
 		for _, source := range sources {
 			wg.Add(1)
 			fn := source.fn
+			sourceName := source.name
 
 			go func() {
 				defer wg.Done()
@@ -104,7 +105,7 @@ func main() {
 					res := new(Result)
 					res.n = n
 					res.domain = domain
-					res.src = source.name // Use the name of the source
+					res.src = sourceName
 
 					out <- *res
 				}
@@ -158,7 +159,7 @@ func httpGet(url string) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	raw, err := ioutil.ReadAll(res.Body)
+	raw, err := io.ReadAll(res.Body)
 
 	res.Body.Close()
 	if err != nil {
@@ -171,18 +172,13 @@ func httpGet(url string) ([]byte, error) {
 func cleanDomain(d string) string {
 	d = strings.ToLower(d)
 
-	// no idea what this is, but we can't clean it ¯\_(ツ)_/¯
 	if len(d) < 2 {
 		return d
 	}
 
-	if strings.HasPrefix(d, "*") || strings.HasPrefix(d, "%") {
-		d = d[1:]
-	}
-
-	if strings.HasPrefix(d, ".") {
-		d = d[1:]
-	}
+	d = strings.TrimPrefix(d, "*")
+	d = strings.TrimPrefix(d, "%")
+	d = strings.TrimPrefix(d, ".")
 
 	return d
 
